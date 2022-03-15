@@ -5,7 +5,8 @@ const net = require('net'),
     EventParser = require('../entities/EventParser.js'),
     Message = require('js-message'),
     fs = require('fs'),
-    Queue = require('js-queue');
+    Queue = require('js-queue'),
+    IpcBuffer = require('./IpcBuffer');
 
 let Events = require('event-pubsub/es5');
 if(process.version[1]>4){
@@ -219,18 +220,14 @@ function connect(){
                 return;
             }
 
-            if(!this.ipcBuffer){
-                this.ipcBuffer='';
+            if (! this.ipcBuffer) {
+                this.ipcBuffer = new IpcBuffer(eventParser.delimiter);
             }
-
-            data=(this.ipcBuffer+=data);
-
-            if(data.slice(-1)!=eventParser.delimiter || data.indexOf(eventParser.delimiter) == -1){
+            data = this.ipcBuffer.addAndTake(data);
+            if (data == null) {
                 client.log('Messages are large, You may want to consider smaller messages.');
                 return;
             }
-
-            this.ipcBuffer='';
 
             const events = eventParser.parse(data);
             const eCount = events.length;

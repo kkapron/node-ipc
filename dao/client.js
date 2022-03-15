@@ -5,6 +5,7 @@ import Message from 'js-message';
 import fs from 'fs';
 import Queue from 'js-queue';
 import Events from 'event-pubsub';
+import IpcBuffer from './IpcBuffer';
 
 let eventParser = new EventParser();
 
@@ -217,18 +218,14 @@ function connect(){
                 return;
             }
 
-            if(!this.ipcBuffer){
-                this.ipcBuffer='';
+            if (! this.ipcBuffer) {
+                this.ipcBuffer = new IpcBuffer(eventParser.delimiter);
             }
-
-            data=(this.ipcBuffer+=data);
-
-            if(data.slice(-1)!=eventParser.delimiter || data.indexOf(eventParser.delimiter) == -1){
+            data = this.ipcBuffer.addAndTake(data);
+            if (data == null) {
                 client.log('Messages are large, You may want to consider smaller messages.');
                 return;
             }
-
-            this.ipcBuffer='';
 
             const events = eventParser.parse(data);
             const eCount = events.length;

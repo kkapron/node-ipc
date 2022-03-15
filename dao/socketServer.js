@@ -6,6 +6,7 @@ import dgram from 'dgram';
 import EventParser from '../entities/EventParser.js';
 import Message from 'js-message';
 import Events from 'event-pubsub';
+import IpcBuffer from './IpcBuffer';
 
 let eventParser = new EventParser();
 
@@ -158,18 +159,14 @@ function gotData(socket,data,UDPSocket){
         return;
     }
 
-    if(!sock.ipcBuffer){
-        sock.ipcBuffer='';
+    if (!sock.ipcBuffer) {
+        sock.ipcBuffer = new IpcBuffer(eventParser.delimiter);
     }
-
-    data=(sock.ipcBuffer+=data);
-
-    if(data.slice(-1)!=eventParser.delimiter || data.indexOf(eventParser.delimiter) == -1){
+    data = sock.ipcBuffer.addAndTake(data);
+    if (data == null) {
         this.log('Messages are large, You may want to consider smaller messages.');
         return;
     }
-
-    sock.ipcBuffer='';
 
     data=eventParser.parse(data);
 
